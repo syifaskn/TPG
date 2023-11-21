@@ -1,0 +1,115 @@
+---
+title: "tpg kelompok"
+author: "Syifa Khairunnisa"
+date: "2023-11-21"
+output: html_document
+---
+
+```{r}
+library(rio)
+data <- import("https://raw.githubusercontent.com/syifaskn/TPG/main/datatpg_k7.csv")
+str(data)
+head(data)
+```
+
+
+Agar nama-nama objek (Provinsi) menjadi nama bagi masing-masing baris, maka dilakukan sesuai kode berikut:
+
+```{r}
+rownames(data) <- data$Provinsi
+data_new <- data[,-1] #hapus kolom nama universitas
+head(data_new)
+```
+
+# Standarisasi peubah
+
+```{r}
+scaled_data <- scale(data_new)
+```
+
+
+# Melakukan eksplorasi data
+Diperoleh ringkasan/deskripsi data sebagai berikut.
+
+```{r}
+summary(scaled_data)
+```
+
+Dari hasil di atas, diperoleh statistik 5 serangkai dari masing-masing peubah yang menjelaskan Provinsi.
+
+Kemudian dilakukan visualisasi data menggunakan boxplot sebagai berikut:
+
+```{r}
+boxplot(scaled_data)
+```
+
+Boxplot digunakan untuk memeriksa keberadaan pencilan dalam suatu peubah. 
+
+Selanjutnya, dilakukan eksplorasi mengenai korelasi antar peubah dengan fungsi `corrplot()`.
+
+```{r}
+library(corrplot)
+corrplot(cor(scaled_data), method = "number", is.cor = T, type = "lower", diag=F)
+```
+
+# Analisis biplot
+
+```{r}
+# install.packages("FactoMineR")
+# install.packages("factoextra")
+
+library(FactoMineR)
+library(factoextra)
+```
+
+## 1. Penskalaan/pengoreksian data
+
+Sebelum melakukan analisis biplot, dilakukan pengoreksian data (matriks **X**) terhadap rataannya menggunakan fungsi `scale()`.
+
+```{r}
+df = scale(scaled_data,scale = FALSE)
+head(df)
+```
+
+## 2. Pembentukan fungsi komponen utama dan grafik biplot
+
+Pembentukan fungsi komponen utama dilakukan dengan menggunakan fungsi `PCA()`
+
+```{r}
+df_pca = PCA(df, graph = F,scale.unit = F)
+```
+
+Kemudian dilakukan pembentukan grafik biplot dengan fungsi `fviz_pca_biplot()` yang membutuhkan argumen berupa fungsi komponen utama yang telah dibentuk.
+
+```{r}
+fviz_pca_biplot(df_pca,repel = T) + theme_classic()
+```
+
+Dari grafik di atas, diperoleh informasi sebagai berikut:
+
+1. **Keragaman peubah**
+    - Peubah `` dan `` memiliki keragaman yang lebih besar dibandingkan peubah lainnya.
+    - Peubah `` memiliki keragaman terkecil.
+2. **Keeratan hubungan antar peubah**
+    - Peubah ``, `` dan `` memiliki korelasi yang positif terlihat dari sudut yang terbentuk membentuk sudut < 90 derajat.
+    - Peubah `` dan `` serta `` dan `` juga memiliki korelasi yang positif terlihat sudutnya < 90 derajat. 
+    - Korelasi negatif dimiliki oleh hubungan peubah `` dan `` serta ``, dan ``.
+3. **Kemiripan antar objek** dan **Posisi relatif objek dengan peubah penciri**
+    -  dan digambarkan dalam posisi yang berdekatan, artinya keduanya memiliki karakteristik yang mirip.
+    -  dicirikan dengan peubah `` yang bernilai cukup tinggi.
+    -  memiliki `` di bawah rata-rata.  
+
+Selanjutnya untuk mengevaluasi kebaikan dari biplot yang terbentuk, dilakukan dengan melihat persentase kumulatif keragaman yang diperoleh dari dua nilai eigen teratas (karena biplot yang terbentuk dua dimensi).
+
+Kebaikan biplot dilihat berdasarkan `cumulative.variance.percent` dari nilai eigen kedua. (Informasi keragaman yang mampu dijelaskan oleh biplot adalah sebesar 63.37%. Artinya biplot mampu memberikan informasi dari 5 peubah untuk menilai posisi relatif 34 Provinsi)
+
+```{r}
+eigen_values <- get_eigenvalue(df_pca)
+eigen_values
+```
+
+Selain itu, dapat melihat presentase keragaman biplot dengan grafik plot scree dengan menggunakan `fviz_eig()` berikut.
+
+```{r}
+fviz_eig(df_pca, addlabels = T) + theme_classic()
+```
